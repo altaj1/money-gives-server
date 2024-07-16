@@ -95,7 +95,7 @@ async function run (){
                  // clere cookis
                  app.post('/logout', async (req, res) => {
                     const user = req.body;
-                    console.log('logging out', user);
+                    console.log('logging out', user, "ami achi");
                     res.clearCookie('token', {...cookieOptions,  maxAge: 0 }).send({ success: true })
                 })
                 // register in db
@@ -141,11 +141,25 @@ async function run (){
         const result = await registerCollection.find().toArray()
         res.send(result)
       })
+             // login user
+       app.put('/login',  async (req, res) => {
+        const data = req.body;
+        const query = {
+            
+             mobile:data.emailOrPh
+        }
+        const findPhone = await registerCollection.findOne(query)
+        console.log(findPhone)
+        const isValid = await bcrypt.compare(data.password, findPhone.pin)
+        if (isValid) {
+            res.send(findPhone)
+        } 
+      })
     //   get singal user 
     app.get('/user/:email', verifyToken,  async (req, res) => {
         const email = req.params.email;
         
-        const result = await usersCollection.findOne({email})
+        const result = await registerCollection.findOne({email})
         res.send(result)
       })
            
