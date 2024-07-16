@@ -58,7 +58,7 @@ async function run (){
             // console.log('hello')
             const user = req.user
             const query = { email: user?.email }
-            const result = await usersCollection.findOne(query)
+            const result = await registerCollection.findOne(query)
             // console.log(result?.role)
             if (!result || result?.role !== 'Admin')
               return res.status(401).send({ message: 'unauthorized access!!' })
@@ -66,13 +66,13 @@ async function run (){
             next()
           }
               // verify Contest Creato middleware
-              const verifyContestCreator = async (req, res, next) => {
+              const verifyAgent = async (req, res, next) => {
                 
                 const user = req.user
                 const query = { email: user?.email }
-                const result = await usersCollection.findOne(query)
+                const result = await registerCollection.findOne(query)
                 console.log(result?.role)
-                if (!result || result?.role !== 'ContestCreator') {
+                if (!result || result?.role !== 'Agent') {
                   return res.status(401).send({ message: 'unauthorized access!!' })
                 }
           
