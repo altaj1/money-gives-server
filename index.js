@@ -204,6 +204,15 @@ async function run (){
         const result = await registerCollection.find(query).toArray()
         res.send(result)
       })
+             // get all users data from db
+       app.get('/users/agent', verifyToken, verifyAdmin, async (req, res) => {
+        const search = req.query.search || '';
+        const query = {
+            name:{$regex:String(search), $options: 'i'},
+          }
+        const result = await registerAgentCollection.find(query).toArray()
+        res.send(result)
+      })
              // login user
        app.put('/login',  async (req, res) => {
         const data = req.body;
