@@ -54,6 +54,7 @@ async function run (){
     try{
         const db = client.db('moneyGives');
         const registerCollection = db.collection('users')
+        const registerAgentCollection = db.collection('agent')
         const verifyAdmin = async (req, res, next) => {
             // console.log('hello')
             const user = req.user
@@ -128,17 +129,79 @@ async function run (){
                 role: user.role,
                 status: user.status,
                 mobile: user.mobile,
-                pin: hashPass
+                pin: hashPass,
+                name:user.name
               },
             }
             const result = await registerCollection.updateOne(query, updateDoc, options)
             
             res.send(result)
            }) 
+                // register Agent in db
+           app.put('/register/agent', async(req, res)=>{
+            const user = req.body
+  
+            const query = { email: user?.email }
+            // check if user already exists in db
+            const isExist = await registerAgentCollection.findOne(query)
+            if (isExist) {
+              if (user.status === 'pending') {
+                // if existing user try to change his role
+                const result = await registerAgentCollection.updateOne(query, {
+                  $set: { status: user?.status },
+                })
+                return res.send(result)
+              } else {
+                // if existing user login again
+                return res.send(isExist)
+              }
+            }
+            // save user for the first time
+            const options = { upsert: true }
+           const getPass = await registerCollection.findOne({email:user.email})
+           const isValid = await bcrypt.compare(user.pin, getPass?.pin||"")
+        if (!isValid) {
+            res.send({message: "Unauthorized"})
+            return
+        } 
+          //  console.log(isValid)
+            const hashPass = await bcrypt.hash(user.pin, 13)
+            // console.log(hashPass)
+            const updateDoc = {
+              $set: {
+                email: user.email,
+                role: user.role,
+                status: user.status,
+                mobile: user.mobile,
+                pin: hashPass,
+                name:user.name
+              },
+            }
+            const result = await registerAgentCollection.updateOne(query, updateDoc, options)
+            
+            res.send(result)
+           }) 
 
+              //update a user role
+    app.put('/users/update/:email', verifyToken, async (req, res) => {
+        const email = req.params.email
+        const data = req.body
+        const query = { email }
+        // console.log(data)
+        const updateDoc = {
+          $set: { ...data,},
+        }
+        const result = await registerCollection.updateOne(query, updateDoc)
+        res.send(result)
+        // console.log(result)
+      })
              // get all users data from db
-       app.get('/users', verifyToken,  async (req, res) => {
-        const result = await registerCollection.find().toArray()
+       app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
+        const search = req.query.search || '';
+        const query = {
+            name:{$regex:String(search), $options: 'i'},
+          }
+        const result = await registerCollection.find(query).toArray()
         res.send(result)
       })
              // login user
@@ -149,7 +212,6 @@ async function run (){
              mobile:data.emailOrPh
         }
         const findPhone = await registerCollection.findOne(query)
-        console.log(findPhone)
         const isValid = await bcrypt.compare(data.password, findPhone.pin)
         if (isValid) {
             res.send(findPhone)
