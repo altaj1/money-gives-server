@@ -191,9 +191,23 @@ async function run (){
         const updateDoc = {
           $set: { ...data,},
         }
+        const updateAgent = {
+          $set:{status: data.status,
+                role:"Agent"
+          }
+        }
+        if (data.status == "Approve" && data.balance == 10000) {
+          const resultAgent = await registerAgentCollection.updateOne(query, updateAgent)
+          const resultUser = await registerCollection.updateOne(query, {$set:{role:"Agent",
+            balance:data.balance
+          }})
+          return
+        }
+        
+       
         const result = await registerCollection.updateOne(query, updateDoc)
         res.send(result)
-        // console.log(result)
+        
       })
              // get all users data from db
        app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
